@@ -12,10 +12,18 @@ import (
 	"github.com/kjk/u"
 )
 
+// /
 func index(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	verbosef(ctx, "index: '%s'\n", r.URL)
-	fmt.Fprint(w, "Hello strager. You can contact me via https://blog.kowalczyk.info/contactme.html\n")
+	fmt.Fprint(w, "Hello stranger. You can contact me via https://blog.kowalczyk.info/contactme.html\n")
+}
+
+// /ping
+func ping(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	verbosef(ctx, "ping: '%s'\n", r.URL)
+	fmt.Fprint(w, "pong\n")
 }
 
 func serveJSON(w http.ResponseWriter, r *http.Request, code int, v interface{}) {
@@ -34,8 +42,9 @@ func serveJSON(w http.ResponseWriter, r *http.Request, code int, v interface{}) 
 }
 
 var (
-	flgDeployGcr   bool
-	flgBuildDocker bool
+	flgDeployGcr      bool
+	flgBuildDocker    bool
+	flgRunDockerLocal bool
 	// in dev:
 	// * we run emulataed firestore database
 	// * run on "localhost" http address and a different http address
@@ -50,6 +59,7 @@ func main() {
 
 	flag.BoolVar(&flgDeployGcr, "deploy-gcr", false, "builds docker image for gcr and deploys it to gcr")
 	flag.BoolVar(&flgBuildDocker, "build-docker", false, "builder docker image locally eval-multi-20_04")
+	flag.BoolVar(&flgRunDockerLocal, "run-docker", false, "build and run docker images locally. can access on http://localhost:8080")
 	flag.BoolVar(&flgVerbose, "verbose", false, "run one of the do commands")
 	flag.Parse()
 
@@ -62,12 +72,18 @@ func main() {
 	}
 
 	if flgBuildDocker {
-		buildDockerLocal()
+		buildDockerLocal("main")
 		return
 	}
 
 	if flgDeployGcr {
 		deployGcr()
+		return
+	}
+
+	if flgRunDockerLocal {
+		buildDockerLocal("multi")
+		runDockerLocal("multi")
 		return
 	}
 
@@ -78,6 +94,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", index)
+	http.HandleFunc("/ping", ping)
 	http.HandleFunc("/eval", eval)
 
 	port := os.Getenv("PORT")

@@ -13,6 +13,10 @@ const (
 	gcpProject = "cloudeval-255302"
 )
 
+const (
+	containerName = "code-eval-cont"
+)
+
 var (
 	validLangs = []string{"multi", "multi-local"}
 )
@@ -51,8 +55,19 @@ func deployGcr() {
 	buildAndDeployToGCR("multi")
 }
 
-func buildDockerLocal() {
-	dir := filepath.Join("docker", "multi-local")
-	cmd := exec.Command("docker", "build", "-f", filepath.Join(dir, "Dockerfile"), "-t", "eval-multi:latest", ".")
+func buildDockerLocal(lang string) {
+	dir := filepath.Join("docker", lang+"-local")
+	imageName := "eval" + lang + ":latest"
+	cmd := exec.Command("docker", "build", "-f", filepath.Join(dir, "Dockerfile"), "--tag", imageName, ".")
+	u.RunCmdLoggedMust(cmd)
+}
+
+//for manually testing
+func runDockerLocal(lang string) {
+	panicIfNotValidLang(lang)
+	imageName := "eval" + lang + ":latest"
+	// we start only one container at a time, so we can use just one cname
+	// (continer name)
+	cmd := exec.Command("docker", "run", "--rm", "--name", containerName, "-p", "8533:8080", imageName)
 	u.RunCmdLoggedMust(cmd)
 }

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/codeexec/eval/tests"
 	"github.com/kjk/u"
 )
 
@@ -100,14 +101,22 @@ func startDockerLocal(lang string, verbose bool) func() {
 }
 
 func stopDockerContainer() {
-	logf(context.Background(), "Stopping container '%s'\n", containerName)
+	ctx := context.Background()
+	logf(ctx, "Stopping container '%s'\n", containerName)
 	cmd := exec.Command("docker", "stop", containerName)
 	err := cmd.Run()
 	must(err)
 }
 
 func runEvalTestsLocal() {
-	startDockerLocal("multi", true)
-	defer stopDockerContainer()
+	ctx := context.Background()
+	allTests := tests.LoadTests()
+	logf(ctx, "number of tests: %d\n", len(allTests))
+
+	/*
+		startDockerLocal("multi", true)
+		defer stopDockerContainer()
+	*/
+
 	// TODO: write me
 }

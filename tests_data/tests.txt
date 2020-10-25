@@ -1,0 +1,192 @@
+:file 00.go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", "Hello!")
+}
+:stdout
+Hello!
+---
+:file 01.go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	fmt.Printf("%s", "Stdout")
+	fmt.Fprintf(os.Stderr, "%s", "Stderr")
+}
+:stderr
+Stderr
+---
+:file 02.go
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	d, err := ioutil.ReadAll(os.Stdin)
+	must(err)
+	fmt.Fprintf(os.Stdout, "%s", string(d))
+}
+:stdin
+this is stdin
+:stdout
+this is stdin
+---
+:file 03.go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Printf("%s", "haha')
+}
+:stdout
+haha
+---
+:run go build
+:file 04_1.go
+// +build !second
+
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", "No tag")
+}
+:file 04_2.go
+// +build second
+
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", "with tag second")
+}
+:stdout
+No tag
+---
+:file 05.go
+package main
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+)
+
+func main() {
+	s1 := "https://en.wikipedia.org/wiki/The_Master_(2012_film)"
+	o1 := goldmark.New(goldmark.WithExtensions(extension.Linkify))
+	var b2 bytes.Buffer
+	o1.Convert([]byte(s1), &b2)
+	s2 := b2.String()
+	fmt.Print(s2)
+}
+:stdout
+<p><a href="https://en.wikipedia.org/wiki/The_Master_(2012_film)">https://en.wikipedia.org/wiki/The_Master_(2012_film)</a></p>
+---
+:file 06.go
+// :run go run main.go -echo echo-arg additional arg
+// :collection Essential Go
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+)
+
+// :show start
+var (
+	flgHelp bool
+	flgEcho string
+)
+
+func parseCmdLineFlags() {
+	flag.BoolVar(&flgHelp, "help", false, "if true, show help")
+	flag.StringVar(&flgEcho, "echo", "", "")
+	flag.Parse()
+}
+
+func main() {
+	parseCmdLineFlags()
+	if flgHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
+	fmt.Printf("flag -echo: '%s'\n", flgEcho)
+
+	remainingArgs := flag.Args()
+	for _, arg := range remainingArgs {
+		fmt.Printf("Remainig arg: '%s'\n", arg)
+	}
+}
+
+// :show end
+:stdout
+flag -echo: 'echo-arg'
+Remainig arg: 'additional'
+Remainig arg: 'arg'
+---
+:file 07.go
+// :run go run -race main.go
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sync"
+	"time"
+)
+
+var (
+	n int
+)
+
+func main() {
+	var wg sync.WaitGroup
+	nCPU := runtime.NumCPU()
+	nIter := 10
+	for i := 0; i < nCPU; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < nIter; j++ {
+				n++
+				time.Sleep(time.Microsecond * 10)
+			}
+		}()
+	}
+	wg.Wait()
+	fmt.Printf("n is: %d, expected: %d\n", n, nCPU*nIter)
+}
+:stderr
+executable file not found
+---

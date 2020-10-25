@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -75,4 +77,37 @@ func runDockerLocal(lang string) {
 func runUnitTests() {
 	cmd := exec.Command("go", "test", "-v", "./...")
 	u.RunCmdLoggedMust(cmd)
+}
+
+func startDockerLocal(lang string, verbose bool) func() {
+	panicIfNotValidLang(lang)
+	imageName := "eval" + lang + ":latest"
+	// we start only one container at a time, so we can use just one cname
+	// (continer name)
+	cmd := exec.Command("docker", "run", "--rm", "--name", containerName, "-p", "8533:8080")
+	if verbose {
+		cmd.Args = append(cmd.Args, "--env", "VERBOSE=true")
+	}
+	cmd.Args = append(cmd.Args, imageName)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Start()
+	must(err)
+	return func() {
+		// Maybe: use unique name for each container
+		stopDockerContainer()
+	}
+}
+
+func stopDockerContainer() {
+	logf(context.Background(), "Stopping container '%s'\n", containerName)
+	cmd := exec.Command("docker", "stop", containerName)
+	err := cmd.Run()
+	must(err)
+}
+
+func runEvalTestsLocal() {
+	startDockerLocal("multi", true)
+	defer stopDockerContainer()
+	// TODO: write me
 }

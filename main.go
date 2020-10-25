@@ -12,6 +12,10 @@ import (
 	"github.com/kjk/u"
 )
 
+var (
+	must = u.Must
+)
+
 // /
 func index(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -41,27 +45,29 @@ func serveJSON(w http.ResponseWriter, r *http.Request, code int, v interface{}) 
 	_, _ = w.Write(d)
 }
 
-var (
-	flgDeployGcr      bool
-	flgBuildDocker    bool
-	flgRunDockerLocal bool
-	flgRunUnitTests   bool
-	// in dev:
-	// * we run emulataed firestore database
-	// * run on "localhost" http address and a different http address
-	// * templates are re-loaded
-	flgDev     bool
-	flgVerbose bool
-)
-
 func main() {
 	//addToPath("/usr/local/go/bin")
 	//printEnv()
+
+	var (
+		flgDeployGcr         bool
+		flgBuildDocker       bool
+		flgRunDockerLocal    bool
+		flgRunUnitTests      bool
+		flgRunEvalTestsLocal bool
+		// in dev:
+		// * we run emulataed firestore database
+		// * run on "localhost" http address and a different http address
+		// * templates are re-loaded
+		flgDev     bool
+		flgVerbose bool
+	)
 
 	flag.BoolVar(&flgDeployGcr, "deploy-gcr", false, "builds docker image for gcr and deploys it to gcr")
 	flag.BoolVar(&flgBuildDocker, "build-docker", false, "builder docker image locally eval-multi-20_04")
 	flag.BoolVar(&flgRunDockerLocal, "run-docker", false, "build and run docker images locally. can access on http://localhost:8080")
 	flag.BoolVar(&flgRunUnitTests, "unit-tests", false, "run unit tests")
+	flag.BoolVar(&flgRunEvalTestsLocal, "eval-tests-local", false, "run eval tests against a local docker container")
 	flag.BoolVar(&flgVerbose, "verbose", false, "run one of the do commands")
 	flag.Parse()
 
@@ -91,6 +97,11 @@ func main() {
 	if flgRunDockerLocal {
 		buildDockerLocal("multi")
 		runDockerLocal("multi")
+		return
+	}
+
+	if flgRunEvalTestsLocal {
+		runEvalTestsLocal()
 		return
 	}
 

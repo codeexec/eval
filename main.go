@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -32,14 +33,50 @@ func serveJSON(w http.ResponseWriter, r *http.Request, code int, v interface{}) 
 	_, _ = w.Write(d)
 }
 
+var (
+	flgDeployGcr   bool
+	flgBuildDocker bool
+	// in dev:
+	// * we run emulataed firestore database
+	// * run on "localhost" http address and a different http address
+	// * templates are re-loaded
+	flgDev     bool
+	flgVerbose bool
+)
+
 func main() {
 	//addToPath("/usr/local/go/bin")
 	//printEnv()
 
+	flag.BoolVar(&flgDeployGcr, "deploy-gcr", false, "builds docker image for gcr and deploys it to gcr")
+	flag.BoolVar(&flgBuildDocker, "build-docker", false, "builder docker image locally eval-multi-20_04")
+	flag.BoolVar(&flgVerbose, "verbose", false, "run one of the do commands")
+	flag.Parse()
+
 	// TODO: do verbose by default
 	if true || os.Getenv("VERBOSE") == "true" {
-		verbose = true
+		flgVerbose = true
 	}
+	if !flgDev {
+		flgDev = isRunningWindows()
+	}
+
+	if flgBuildDocker {
+		buildDockerLocal()
+		return
+	}
+
+	if flgDeployGcr {
+		deployGcr()
+		return
+	}
+
+	// no point running on Windows
+	if isRunningWindows() {
+		flag.Usage()
+		return
+	}
+
 	http.HandleFunc("/", index)
 	http.HandleFunc("/eval", eval)
 
@@ -47,22 +84,25 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	if isRunningDev() {
+	// TODO: maybe not necessary
+	if flgDev {
+		flgVerbose = true
 		port = "8533"
 	}
+
+	verbose = flgVerbose
 
 	addr := ":" + port
 	uri := "http://" + addr
 
-	if isRunningDev() {
-		verbose = true
+	if flgDev {
 		addr = "localhost:" + port
 		uri = "http://" + addr
 	}
 	ctx := context.Background()
-	logf(ctx, "starting on '%s' dev: %v, verbose: %v\n", uri, isRunningDev(), verbose)
+	logf(ctx, "starting on '%s' dev: %v, verbose: %v\n", uri, flgDev, verbose)
 
-	if isRunningDev() {
+	if isRunningWindows() {
 		go func() {
 			time.Sleep(time.Second)
 			u.OpenBrowser(uri)

@@ -7,25 +7,8 @@ import (
 	"runtime"
 )
 
-// auto-determine if we're running in production or in dev
-// dev vs. productions affects:
-// * database (emulated firestore in dev)
-// * http address ("localhosts" in dev)
-// * templates are re-loaded in dev
-func isRunningDev() bool {
-	if runtime.GOOS == "darwin" {
-		return true
-	}
-	if runtime.GOOS == "windows" {
-		return true
-	}
-	if runtime.GOOS != "linux" {
-		logf(context.Background(), "Unrecognized runtime.GOOS '%s'\n", runtime.GOOS)
-	}
-	// we assume this is linux and hence production mode
-	// TODO: if we ever expect to run on Linux and not in production mode,
-	// this needs updating (e.g. check the user we're running as is "presstige")
-	return false
+func isRunningWindows() bool {
+	return runtime.GOOS == "windows"
 }
 
 func printDir(dir string) {

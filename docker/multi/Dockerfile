@@ -1,13 +1,13 @@
 # to test build:
 # docker build -t tmp -f eval/go/Dockerfile .
-FROM gcr.io/cloudeval-255302/eval-multi-base as build
+FROM gcr.io/cloudeval-255302/eval-multi-base-20_04 as build
 WORKDIR /src/eval
-COPY eval/ /src/eval
-COPY defs/ /src/defs
+COPY . /src/eval
+COPY defs /src/eval/defs
 
 RUN go build -o codeeval .
 
-FROM gcr.io/cloudeval-255302/eval-multi-base
+FROM gcr.io/cloudeval-255302/eval-multi-base-20_04
 
 COPY --from=build /src/eval/codeeval /
 CMD ["/codeeval"]

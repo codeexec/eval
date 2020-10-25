@@ -45,6 +45,7 @@ var (
 	flgDeployGcr      bool
 	flgBuildDocker    bool
 	flgRunDockerLocal bool
+	flgRunUnitTests   bool
 	// in dev:
 	// * we run emulataed firestore database
 	// * run on "localhost" http address and a different http address
@@ -60,6 +61,7 @@ func main() {
 	flag.BoolVar(&flgDeployGcr, "deploy-gcr", false, "builds docker image for gcr and deploys it to gcr")
 	flag.BoolVar(&flgBuildDocker, "build-docker", false, "builder docker image locally eval-multi-20_04")
 	flag.BoolVar(&flgRunDockerLocal, "run-docker", false, "build and run docker images locally. can access on http://localhost:8080")
+	flag.BoolVar(&flgRunUnitTests, "unit-tests", false, "run unit tests")
 	flag.BoolVar(&flgVerbose, "verbose", false, "run one of the do commands")
 	flag.Parse()
 
@@ -69,6 +71,11 @@ func main() {
 	}
 	if !flgDev {
 		flgDev = isRunningWindows()
+	}
+
+	if flgRunUnitTests {
+		runUnitTests()
+		return
 	}
 
 	if flgBuildDocker {

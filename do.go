@@ -68,6 +68,11 @@ func runDockerLocal(lang string) {
 	imageName := "eval" + lang + ":latest"
 	// we start only one container at a time, so we can use just one cname
 	// (continer name)
-	cmd := exec.Command("docker", "run", "--rm", "--name", containerName, "-p", "8533:8080", imageName)
+	cmd := exec.Command("docker", "run", "--rm", "-it", "--name", containerName, "-p", "8533:8080", imageName)
+	u.RunCmdLoggedMust(cmd)
+}
+
+func runUnitTests() {
+	cmd := exec.Command("go", "test", "-v", "./...")
 	u.RunCmdLoggedMust(cmd)
 }
